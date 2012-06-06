@@ -1,4 +1,4 @@
--module(torerelo_listen).
+-module(torerlo_listen).
 
 -export([listen/0]).
 
