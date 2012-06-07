@@ -1,4 +1,4 @@
--module(torerlo_control).
+-module(torerlo).
 -behavior(gen_server).
 
 -define(SERVER, ?MODULE).
