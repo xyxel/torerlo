@@ -31,7 +31,7 @@ auth(UserName, UserPass) ->
 % gen_server callback
 init([]) ->
     io:format("connect to database would be here...\n",[]),
-    register(torerlo_test, spawn(torerlo_listen, listen, [])),
+    Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen() end),
     {ok, start}.
 
 handle_call({auth, UserName, UserPass}, _From, State) ->
