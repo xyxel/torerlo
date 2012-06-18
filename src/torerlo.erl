@@ -32,6 +32,15 @@ auth(UserName, UserPass) ->
 
 % gen_server callback
 init([]) ->
+    io:format("Reading configuration file...~n", []),
+    {ok, Settings} = file:consult("src/torerlo.cfg"),
+    {value, {_, Servername}} = lists:keysearch(server, 1, Settings),
+    io:format("Server: ~p~n", [Servername]),
+    {value, {_, DBName}} = lists:keysearch(database, 1, Settings),
+    io:format("Database: ~p~n", [DBName]),
+    {value, {_, DBUser}} = lists:keysearch(dbuser, 1, Settings),
+    io:format("DB User: ~p~n", [DBUser]),
+    {value, {_, DBPass}} = lists:keysearch(dbpass, 1, Settings),
     io:format("connect to database...~n",[]),
     torerlo_pgsql:db_connect("localhost", "postgres", "postgres", "torerlo"),
     io:format("port is listening...~n",[]),
