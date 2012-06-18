@@ -36,16 +36,18 @@ init([]) ->
     {ok, Settings} = file:consult("src/torerlo.cfg"),
     {value, {_, Servername}} = lists:keysearch(server, 1, Settings),
     io:format("Server: ~p~n", [Servername]),
-    {value, {_, DBName}} = lists:keysearch(database, 1, Settings),
-    io:format("Database: ~p~n", [DBName]),
-    {value, {_, DBUser}} = lists:keysearch(dbuser, 1, Settings),
-    io:format("DB User: ~p~n", [DBUser]),
-    {value, {_, DBPass}} = lists:keysearch(dbpass, 1, Settings),
+    {value, {_, Port}} = lists:keysearch(port, 1, Settings),
+    io:format("Port: ~p~n", [Port]),
+    {value, {_, Database_server}} = lists:keysearch(database, 1, Settings),
+    io:format("Database: ~p~n", [Database_server]),
+    {value, {_, Database_user}} = lists:keysearch(dbuser, 1, Settings),
+    io:format("DB User: ~p~n", [Database_user]),
+    {value, {_, Database_passwd}} = lists:keysearch(dbpass, 1, Settings),
     io:format("connect to database...~n",[]),
-    torerlo_pgsql:db_connect("localhost", "postgres", "postgres", "torerlo"),
+    torerlo_pgsql:db_connect(Servername, Database_user, Database_passwd, "torerlo"),
     io:format("port is listening...~n",[]),
-    Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen() end),
-    {ok, start}.
+    Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(Servername, Database_user, Database_passwd, Port) end),
+    {ok, Pid}.
 
 handle_call({auth, UserName, UserPass}, _From, State) ->
     io:format("user auth would be here...\n",[]),

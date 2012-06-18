@@ -2,8 +2,8 @@
 
 -compile(export_all).
 
-db_connect(Database_ip, Database_user, Database_passwd, Database_name) ->
-    {ok, DB} = pgsql:connect(Database_ip, Database_user, Database_passwd, [{database, Database_name}]),
+db_connect(Servername, Database_user, Database_passwd, Database_name) ->
+    {ok, DB} = pgsql:connect(Servername, Database_user, Database_passwd, [{database, Database_name}]),
     {ok, DB}.
 
 db_create(DB, Table_torrent, Table_peers, Table_seeds) ->

@@ -1,9 +1,9 @@
 -module(torerlo_listen).
 
--export([listen/0]).
+-export([listen/4]).
 
-listen() ->
-    {ok, LSock} = gen_tcp:listen(9999,[list,{active,false}]),
+listen(Database_name, Database_user, Database_passwd, Port) ->
+    {ok, LSock} = gen_tcp:listen(Port,[list,{active,false}]),
     loop_accept(LSock).
 
 loop_accept(LSock) ->
