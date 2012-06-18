@@ -1,6 +1,8 @@
 -module(torerlo).
 -behavior(gen_server).
 
+-include_lib("deps/epgsql/include/pgsql.hrl").
+
 -define(SERVER, ?MODULE).
 
 -export([start/0,stop/0]).
@@ -30,7 +32,9 @@ auth(UserName, UserPass) ->
 
 % gen_server callback
 init([]) ->
-    io:format("connect to database would be here...\n",[]),
+    io:format("connect to database...~n",[]),
+    torerlo_pgsql:db_connect("localhost", "postgres", "postgres", "torerlo"),
+    io:format("port is listening...~n",[]),
     Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen() end),
     {ok, start}.
 
