@@ -24,8 +24,8 @@ install(DatabaseName) ->
 request(Msg) ->
     gen_server:cast(?SERVER, {request, Msg}).
 
-create(NewMsg) ->
-    gen_server:cast(?SERVER, {create, NewMsg}).
+%add_torrent(DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent) ->
+ %   gen_server:cast(?SERVER, {add_torrent, [DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent]}).
 
 auth(UserName, UserPass) ->
     gen_server:call(?SERVER, {auth, UserName, UserPass}).
@@ -44,9 +44,9 @@ init([]) ->
     io:format("DB User: ~p~n", [Database_user]),
     {value, {_, Database_passwd}} = lists:keysearch(dbpass, 1, Settings),
     io:format("connect to database...~n",[]),
-    torerlo_pgsql:db_connect(Servername, Database_user, Database_passwd, "torerlo"),
+    {ok, DB} = torerlo_pgsql:db_connect(Servername, Database_user, Database_passwd, "torerlo"),
     io:format("port is listening...~n",[]),
-    Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(Servername, Database_user, Database_passwd, Port) end),
+    Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(DB, Servername, Database_user, Database_passwd, Port) end),
     {ok, Pid}.
 
 handle_call({auth, UserName, UserPass}, _From, State) ->
@@ -61,9 +61,10 @@ handle_cast({request, Msg}, State) ->
     io:format("receiving torren-request would be here...\n",[]),
     {noreply, Msg};
 
-handle_cast({create, NewMsg}, State) ->
-    io:format("creating new torrent would be here...\n",[]),
-    {noreply, NewMsg};
+%handle_cast({add_torrent, [DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent]}, State) ->
+%    Pid ! "{add_torrent, [Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent]}",
+ %   {noreply, DB};
+ %   {norepy};
 
 handle_cast(stop, State) ->
     {stop, normal, State}.
