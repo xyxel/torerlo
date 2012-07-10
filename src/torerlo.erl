@@ -5,7 +5,7 @@
 
 -define(SERVER, ?MODULE).
 
--export([start/0,stop/0]).
+-export([start/0, stop/0]).
 
 %-export([init/1,handle_cast/2,handle_info/2,terminate/2,code_change/3]).
 
@@ -16,10 +16,7 @@ start() ->
     gen_server:start_link({local, ?SERVER}, ?SERVER, [], []).
 
 stop() ->
-    gen_server:cast(?MODULE, stop).
-
-install(DatabaseName) ->
-    gen_server:cast(?SERVER, {install, DatabaseName}).
+    gen_server:cast(?SERVER, stop).
 
 request(Msg) ->
     gen_server:cast(?SERVER, {request, Msg}).
@@ -32,30 +29,22 @@ auth(UserName, UserPass) ->
 
 % gen_server callback
 init([]) ->
-    io:format("Reading configuration file...~n", []),
-    {ok, Settings} = file:consult("src/torerlo.cfg"),
-    {value, {_, Servername}} = lists:keysearch(server, 1, Settings),
-    io:format("Server: ~p~n", [Servername]),
-    {value, {_, Port}} = lists:keysearch(port, 1, Settings),
-    io:format("Port: ~p~n", [Port]),
-    {value, {_, Database_server}} = lists:keysearch(database, 1, Settings),
-    io:format("Database: ~p~n", [Database_server]),
-    {value, {_, Database_user}} = lists:keysearch(dbuser, 1, Settings),
-    io:format("DB User: ~p~n", [Database_user]),
-    {value, {_, Database_passwd}} = lists:keysearch(dbpass, 1, Settings),
+    {ok, Servername, Port, Database_server, Database_user, Database_passwd} = torerlo_config:gets("src/torerlo.cfg"),
     io:format("connect to database...~n",[]),
     {ok, DB} = torerlo_pgsql:db_connect(Servername, Database_user, Database_passwd, "torerlo"),
     io:format("port is listening...~n",[]),
+    io:format("Tables checking...~n",[]),
+    case torerlo_pgsql:db_check_tables(DB, "torerlo", "peers", "seeds") of
+        {ok, 0} -> torerlo_pgsql:db_create(DB, "torerlo", "peers", "seeds");
+        {ok, 3} -> io:format("tables are exist...~n", []);
+	_ -> io:format("tables are broken!~n", [])
+    end,
     Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(DB, Servername, Database_user, Database_passwd, Port) end),
     {ok, Pid}.
 
 handle_call({auth, UserName, UserPass}, _From, State) ->
     io:format("user auth would be here...\n",[]),
     {reply, {UserName, UserPass}, State}.
-
-handle_cast({install, DatabaseName}, State) ->
-    io:format("create new database would be here...\n",[]),
-    {noreply, DatabaseName};
 
 handle_cast({request, Msg}, State) ->
     io:format("receiving torren-request would be here...\n",[]),
