@@ -22,7 +22,7 @@ loop_recv(Sock, DB) ->
 %            Msg = process(Data),
             io:format("message: ~p~n",[Msg]),
             {ok, DictPairs} = torerlo_parser:parser(Msg, 99),
-%            torerlo_pgsql:db_insert(DB, "peers", dict:fetch("id", DictPairs), dict:fetch("page", DictPairs)),
+            torerlo_pgsql:db_insert(DB, "peers", dict:fetch("peer_id", DictPairs), dict:fetch("ip", DictPairs), dict:fetch("port", DictPairs), dict:fetch("uploaded", DictPairs), dict:fetch("downloaded", DictPairs), dict:fetch("left", DictPairs), dict:fetch("info_hash", DictPairs)),
             gen_tcp:send(Sock, "Catch!"),
             loop_recv(Sock, DB);
         {_,_} ->

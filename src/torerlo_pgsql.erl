@@ -22,7 +22,7 @@ db_select(DB, Tablename, Field) ->
 %    pgsql:equery(DB, "UPDATE $1 SET 
 
 db_insert(DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Hash_torrent, Desc_torrent, Size_torrent) ->
-    Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, NOW);"),
+    Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, NOW());"),
     pgsql:equery(DB, Query, [Name_torrent, Link_torrent, Owner_torrent, Hash_torrent, Desc_torrent, Size_torrent]).
 
 db_insert(DB, Tablename, Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash) ->
@@ -32,7 +32,7 @@ db_insert(DB, Tablename, Client_id, Client_ip, Client_port, Client_uploaded, Cli
 %        seeds ->
 %            pgsql:equery(DB, "INSERT INTO seeds VALUES ($1,$2);", [Name_table,Name_torrent_table])
 %    end.
-    Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, $7, NOW);"),
+    Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, $7, NOW());"),
     pgsql:equery(DB, Query, [Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash]).
 
 db_check_tables(DB, Table_torrent, Table_peers, Table_seeds) ->
