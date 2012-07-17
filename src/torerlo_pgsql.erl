@@ -18,6 +18,10 @@ db_select(DB, Tablename, Field) ->
     Query = string:concat(string:concat(string:concat("SELECT ", Field), " FROM "), Tablename),
     pgsql:equery(DB, Query).
 
+db_select(DB, Tablename, Client_id, Torrent_hash) ->
+    Query = string:concat(string:concat("SELECT COUNT(*) FROM ", Tablename), " WHERE peer_id = $1 AND torrent_hash = $2"),
+    pgsql:equery(DB, Query, [Client_id, Torrent_hash]).
+
 %db_update(DB, ) ->
 %    pgsql:equery(DB, "UPDATE $1 SET 
 
@@ -26,13 +30,10 @@ db_insert(DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Hash_torrent
     pgsql:equery(DB, Query, [Name_torrent, Link_torrent, Owner_torrent, Hash_torrent, Desc_torrent, Size_torrent]).
 
 db_insert(DB, Tablename, Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash) ->
-%    case Tablename of
-%        peers ->
-%            pgsql:equery(DB, "INSERT INTO peers VALUES ($1,$2);", [Name_table,Name_torrent_table]);
-%        seeds ->
-%            pgsql:equery(DB, "INSERT INTO seeds VALUES ($1,$2);", [Name_table,Name_torrent_table])
-%    end.
-    Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, $7, NOW());"),
+    case db_select(DB, Tablename, Client_id, Torrent_hash) of
+        {ok, _, [{0}]} -> Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, $7, NOW());");
+        {ok, _, _} -> Query = string:concat(string:concat("UPDATE ", Tablename), " SET peer_ip = $2, peer_port = $3, peer_uploaded = $4, peer_downloaded = $5, peer_left = $6, peer_time = NOW() WHERE peer_id = $1 AND torrent_hash = $7")
+    end,
     pgsql:equery(DB, Query, [Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash]).
 
 db_check_tables(DB, Table_torrent, Table_peers, Table_seeds) ->
