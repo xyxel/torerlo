@@ -14,16 +14,14 @@ db_create(DB, Table_torrent, Table_peers, Table_seeds) ->
     io:format("Seeds table creating...~n", []),
     pgsql:equery(DB, string:concat(string:concat("CREATE TABLE ", Table_seeds), " (seed_id char(20), seed_ip char(16), seed_port varchar(8), seed_uploaded varchar(20), seed_downloaded varchar(20), seed_left varchar(20), torrent_hash char(20), seed_time time)")).
 
-db_select(DB, Tablename, Field) ->
-    Query = string:concat(string:concat(string:concat("SELECT ", Field), " FROM "), Tablename),
-    pgsql:equery(DB, Query).
+db_select_peers(DB, Table_peers, Torrent_hash) ->
+    Query = string:concat(string:concat("SELECT peer_id,peer_ip,peer_port FROM ", Table_peers), " WHERE torrent_hash = $1"),
+    {ok, _, Rows} = pgsql:equery(DB, Query, [Torrent_hash]),
+    Rows.
 
 db_select(DB, Tablename, Client_id, Torrent_hash) ->
     Query = string:concat(string:concat("SELECT COUNT(*) FROM ", Tablename), " WHERE peer_id = $1 AND torrent_hash = $2"),
     pgsql:equery(DB, Query, [Client_id, Torrent_hash]).
-
-%db_update(DB, ) ->
-%    pgsql:equery(DB, "UPDATE $1 SET 
 
 db_insert(DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Hash_torrent, Desc_torrent, Size_torrent) ->
     Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, NOW());"),
@@ -34,7 +32,8 @@ db_insert(DB, Tablename, Client_id, Client_ip, Client_port, Client_uploaded, Cli
         {ok, _, [{0}]} -> Query = string:concat(string:concat("INSERT INTO ", Tablename), " VALUES ($1, $2, $3, $4, $5, $6, $7, NOW());");
         {ok, _, _} -> Query = string:concat(string:concat("UPDATE ", Tablename), " SET peer_ip = $2, peer_port = $3, peer_uploaded = $4, peer_downloaded = $5, peer_left = $6, peer_time = NOW() WHERE peer_id = $1 AND torrent_hash = $7")
     end,
-    pgsql:equery(DB, Query, [Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash]).
+    pgsql:equery(DB, Query, [Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash]),
+    {ok, {}}.
 
 db_check_tables(DB, Table_torrent, Table_peers, Table_seeds) ->
     {ok, _, [{Tables}]} = pgsql:equery(DB, "SELECT COUNT(table_name) FROM information_schema.tables WHERE table_name=$1 or table_name=$2 or table_name=$3", [Table_torrent, Table_peers, Table_seeds]),
