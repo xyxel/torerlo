@@ -17,7 +17,14 @@ db_create(DB, Table_torrent, Table_peers, Table_seeds) ->
 db_select_peers(DB, Table_peers, Torrent_hash) ->
     Query = string:concat(string:concat("SELECT peer_id,peer_ip,peer_port FROM ", Table_peers), " WHERE torrent_hash = $1"),
     {ok, _, Rows} = pgsql:equery(DB, Query, [Torrent_hash]),
-    Rows.
+    {list, create_peers_list(Rows, [])}.
+
+create_peers_list([{Peer_id, Peer_ip, Peer_port} | TailDict], []) ->
+    create_peers_list(TailDict, lists:append([], [{dict, dict:from_list([{<<"peer_id">>, Peer_id},{<<"ip">>, Peer_ip}, {<<"port">>, Peer_port}])}]));
+create_peers_list([{Peer_id, Peer_ip, Peer_port} | TailDict], Acc) ->
+    create_peers_list(TailDict, lists:append(Acc, [{dict, dict:from_list([{<<"peer_id">>, Peer_id},{<<"ip">>, Peer_ip}, {<<"port">>, Peer_port}])}]));
+create_peers_list([], Acc) ->
+    Acc.
 
 db_select(DB, Tablename, Client_id, Torrent_hash) ->
     Query = string:concat(string:concat("SELECT COUNT(*) FROM ", Tablename), " WHERE peer_id = $1 AND torrent_hash = $2"),
