@@ -13,6 +13,8 @@ parser(Request, Pid) ->
 
 retype([Key, Value]) ->
     case Key of
+        "info_hash" -> [Key, http_uri:decode(Value)];
+        "peer_id" -> [Key, http_uri:decode(Value)];
         "peer_port" -> [Key, list_to_integer(Value)];
 	"peer_uploaded" -> [Key, list_to_integer(Value)];
 	"peer_downloaded" -> [Key, list_to_integer(Value)];

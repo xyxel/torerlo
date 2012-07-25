@@ -23,7 +23,7 @@ loop_recv(Sock, DB) ->
             io:format("message: ~p~n",[Msg]),
             {ok, DictPairs} = torerlo_parser:parser(Msg, 99),
             torerlo_pgsql:db_insert(DB, "peers", dict:fetch("peer_id", DictPairs), dict:fetch("ip", DictPairs), dict:fetch("port", DictPairs), dict:fetch("uploaded", DictPairs), dict:fetch("downloaded", DictPairs), dict:fetch("left", DictPairs), dict:fetch("info_hash", DictPairs)),
-            gen_tcp:send(Sock, torerlo_code:encode({dict, dict:from_list([{<<"interval">>, <<"20">>}, {<<"peers">>, torerlo_pgsql:db_select_peers(DB, "peers", dict:fetch("info_hash", DictPairs))}])})),
+            gen_tcp:send(Sock, "HTTP/1.0 200 OK\r\n" ++ "Content-Type: text/plain\r\n\r\n" ++ torerlo_code:encode({dict, dict:from_list([{<<"interval">>, 20}, {<<"peers">>, torerlo_pgsql:db_select_peers(DB, "peers", dict:fetch("info_hash", DictPairs))}])})),
             loop_recv(Sock, DB);
         {_,_} ->
             io:format("ERROR\n",[])
