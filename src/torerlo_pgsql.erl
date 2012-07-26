@@ -14,9 +14,9 @@ db_create(DB, Table_torrent, Table_peers, Table_seeds) ->
     io:format("Seeds table creating...~n", []),
     pgsql:equery(DB, string:concat(string:concat("CREATE TABLE ", Table_seeds), " (seed_id char(20), seed_ip char(16), seed_port varchar(8), seed_uploaded varchar(20), seed_downloaded varchar(20), seed_left varchar(20), torrent_hash char(20), seed_time time)")).
 
-db_select_peers(DB, Table_peers, Torrent_hash) ->
-    Query = string:concat(string:concat("SELECT peer_id,peer_ip,peer_port FROM ", Table_peers), " WHERE torrent_hash = $1"),
-    {ok, _, Rows} = pgsql:equery(DB, Query, [Torrent_hash]),
+db_select_peers(DB, Table_peers, Torrent_hash, Peer_id) ->
+    Query = string:concat(string:concat("SELECT peer_id,peer_ip,peer_port FROM ", Table_peers), " WHERE torrent_hash = $1 AND peer_id != $2"),
+    {ok, _, Rows} = pgsql:equery(DB, Query, [Torrent_hash, Peer_id]),
     {list, create_peers_list(Rows, [])}.
 
 create_peers_list([{Peer_id, Peer_ip, Peer_port} | TailDict], []) ->
