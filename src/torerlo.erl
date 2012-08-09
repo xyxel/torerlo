@@ -18,9 +18,6 @@ start() ->
 stop() ->
     gen_server:cast(?SERVER, stop).
 
-request(Msg) ->
-    gen_server:cast(?SERVER, {request, Msg}).
-
 %add_torrent(DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent) ->
  %   gen_server:cast(?SERVER, {add_torrent, [DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent]}).
 
@@ -39,16 +36,14 @@ init([]) ->
         {ok, 3} -> io:format("tables are exist...~n", []);
 	_ -> io:format("tables are broken!~n", [])
     end,
-    Pid = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(DB, Servername, Database_user, Database_passwd, Port) end),
-    {ok, Pid}.
+    Pid_response = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:loop() end),
+    Pid_database = spawn(fun() -> process_flag(trap_exit,true), torerlo_pgsql:loop(DB, Pid_response) end),
+    Pid_request = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(Port, Pid_database) end),
+    {ok, start}.
 
 handle_call({auth, UserName, UserPass}, _From, State) ->
     io:format("user auth would be here...\n",[]),
     {reply, {UserName, UserPass}, State}.
-
-handle_cast({request, Msg}, State) ->
-    io:format("receiving torren-request would be here...\n",[]),
-    {noreply, Msg};
 
 %handle_cast({add_torrent, [DB, Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent]}, State) ->
 %    Pid ! "{add_torrent, [Tablename, Name_torrent, Link_torrent, Owner_torrent, Checksum_torrent]}",
