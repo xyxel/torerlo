@@ -29,11 +29,10 @@ init([]) ->
     {ok, Servername, Port, Database_server, Database_user, Database_passwd} = torerlo_config:gets("src/torerlo.cfg"),
     io:format("connect to database...~n",[]),
     {ok, DB} = torerlo_pgsql:db_connect(Servername, Database_user, Database_passwd, "torerlo"),
-    io:format("port is listening...~n",[]),
-    io:format("Tables checking...~n",[]),
-    case torerlo_pgsql:db_check_tables(DB, "torerlo", "peers", "seeds") of
-        {ok, 0} -> torerlo_pgsql:db_create(DB, "torerlo", "peers", "seeds");
-        {ok, 3} -> io:format("tables are exist...~n", []);
+    io:format("Table checking...~n",[]),
+    case torerlo_pgsql:db_check_tables(DB, "peers") of
+        {ok, 0} -> torerlo_pgsql:db_create(DB, "peers");
+        {ok, 1} -> io:format("table is exist...~n", []);
 	_ -> io:format("tables are broken!~n", [])
     end,
     Pid_response = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:loop() end),
