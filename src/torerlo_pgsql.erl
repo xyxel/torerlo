@@ -8,7 +8,8 @@ db_connect(Servername, Database_user, Database_passwd, Database_name) ->
 
 loop(DB, Pid_response) ->
     receive
-        {request_to_db, {Sock, Table_peers, Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash}} ->
+        {announce_request_to_db, {Sock, Table_peers, Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash}} ->
+            io:format("catch announce request to db", []),
             case db_select(DB, Table_peers, Client_id, Torrent_hash) of
                 {ok, _, [{0}]} -> Query_insert = string:concat(string:concat("INSERT INTO ", Table_peers), " VALUES ($1, $2, $3, $4, $5, $6, $7, NOW());");
                 {ok, _, _} -> Query_insert = string:concat(string:concat("UPDATE ", Table_peers), " SET peer_ip = $2, peer_port = $3, peer_uploaded = $4, peer_downloaded = $5, peer_left = $6, peer_time = NOW() WHERE peer_id = $1 AND torrent_hash = $7")
@@ -16,14 +17,31 @@ loop(DB, Pid_response) ->
             pgsql:equery(DB, Query_insert, [Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash]),
             Query_select = string:concat(string:concat("SELECT peer_ip,peer_port FROM ", Table_peers), " WHERE torrent_hash = $1 AND peer_id != $2"),
             {ok, _, Rows} = pgsql:equery(DB, Query_select, [Torrent_hash, Client_id]),
-            Pid_response ! {response_from_db, Sock, Rows}
+            Pid_response ! {response_from_db, Sock, "announce", Rows},
+            loop(DB, Pid_response);
+        {scrape_request_to_db, {Sock, Client_ip, HashList}} -> 
+            io:format("catch scrape request to db", []),
+            Pid_response ! {response_from_db, Sock, "scrape", create_scrape_list(DB, Client_ip, HashList, [])},
+            loop(DB, Pid_response)
     end.
+
+create_scrape_list(DB, Client_ip, [Torrent_hash | HashList], RespList) ->
+    Tablename = "peers",
+    Query_complete = string:concat(string:concat("SELECT COUNT(*) FROM ", Tablename), " WHERE peer_ip != $1 AND torrent_hash = $2"),
+    Query_downloaded = string:concat(string:concat("SELECT COUNT(*) FROM ", Tablename), " WHERE peer_ip != $1 AND torrent_hash = $2 AND peer_left = '0'"),
+    Query_incomplete = string:concat(string:concat("SELECT COUNT(*) FROM ", Tablename), " WHERE peer_ip != $1 AND torrent_hash = $2 AND peer_left != '0'"),
+    {ok, _, [{Peers_complete}]} = pgsql:equery(DB, Query_complete, [Client_ip, Torrent_hash]),
+    {ok, _, [{Peers_downloaded}]} = pgsql:equery(DB, Query_downloaded, [Client_ip, Torrent_hash]),
+    {ok, _, [{Peers_incomplete}]} = pgsql:equery(DB, Query_incomplete, [Client_ip, Torrent_hash]),
+    create_scrape_list(DB, Client_ip, HashList, lists:append(RespList, [{Torrent_hash, Peers_complete, Peers_downloaded, Peers_incomplete, "torrent_name"}]));
+create_scrape_list(DB, Client_ip, [], RespList) ->
+    RespList.
 
 db_create(DB, Table_peers) ->
 %    io:format("Torrent table creating...~n", []),
-%    pgsql:equery(DB, string:concat(string:concat("CREATE TABLE ", Table_torrent), " (Name char(60), Link char(100), Owner char(20), torrent_hash char(60), torrent_description char(100), torrent_size char(20), torrent_time time)")),
+%    pgsql:equery(DB, string:concat(string:concat("CREATE TABLE ", Table_torrent), " (Name varchar(60), Link char(100), Owner char(20), torrent_hash varchar(60), torrent_description char(100), torrent_size char(20), torrent_time time)")),
     io:format("Peers table creating...~n", []),
-    pgsql:equery(DB, string:concat(string:concat("CREATE TABLE ", Table_peers), " (peer_id char(60), peer_ip char(16), peer_port varchar(8), peer_uploaded varchar(20), peer_downloaded varchar(20), peer_left varchar(20), torrent_hash char(60), peer_time time)")).
+    pgsql:equery(DB, string:concat(string:concat("CREATE TABLE ", Table_peers), " (peer_id varchar(60), peer_ip char(16), peer_port varchar(8), peer_uploaded varchar(20), peer_downloaded varchar(20), peer_left varchar(20), torrent_hash varchar(60), peer_time time)")).
 
 db_select(DB, Tablename, Client_id, Torrent_hash) ->
     Query = string:concat(string:concat("SELECT COUNT(*) FROM ", Tablename), " WHERE peer_id = $1 AND torrent_hash = $2"),
