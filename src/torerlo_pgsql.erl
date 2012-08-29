@@ -6,6 +6,12 @@ db_connect(Servername, Database_user, Database_passwd, Database_name) ->
     {ok, DB} = pgsql:connect(Servername, Database_user, Database_passwd, [{database, Database_name}]),
     {ok, DB}.
 
+clean(DB, Table_peers) ->
+    Query = string:concat(string:concat("DELETE FROM ", Table_peers), " WHERE peer_time < localtime - interval '15 minutes'"),
+    pgsql:equery(DB, Query, []),
+    timer:sleep(15000),
+    clean(DB, Table_peers).
+
 loop(DB, Pid_response) ->
     receive
         {announce_request_to_db, {Sock, Table_peers, Client_id, Client_ip, Client_port, Client_uploaded, Client_downloaded, Client_left, Torrent_hash}} ->

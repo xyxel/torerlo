@@ -37,6 +37,7 @@ init([]) ->
     end,
     Pid_response = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:loop() end),
     Pid_database = spawn(fun() -> process_flag(trap_exit,true), torerlo_pgsql:loop(DB, Pid_response) end),
+    spawn(fun() -> process_flag(trap_exit,true), torerlo_pgsql:clean(DB, "peers") end),
     Pid_request = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(Port, Pid_database) end),
     {ok, start}.
 
