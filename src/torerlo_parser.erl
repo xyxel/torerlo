@@ -26,10 +26,10 @@ retype([Key, Value]) ->
     case Key of
         "info_hash"       -> [Key, decoded_list_to_string(http_uri:decode(Value), " ")];
         "peer_id"         -> [Key, Value];
-        "peer_port"       -> [Key, list_to_integer(Value)];
-	"peer_uploaded"   -> [Key, list_to_integer(Value)];
-	"peer_downloaded" -> [Key, list_to_integer(Value)];
-	"peer_left"       -> [Key, list_to_integer(Value)];
+%        "peer_port"       -> [Key, list_to_integer(Value)];
+%	"peer_uploaded"   -> [Key, list_to_integer(Value)];
+%	"peer_downloaded" -> [Key, list_to_integer(Value)];
+%	"peer_left"       -> [Key, list_to_integer(Value)];
 	_ -> [Key, Value]
     end.
 

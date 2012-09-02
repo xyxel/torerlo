@@ -31,14 +31,15 @@ init([]) ->
     {ok, DB} = torerlo_pgsql:db_connect(Servername, Database_user, Database_passwd, "torerlo"),
     io:format("Table checking...~n",[]),
     case torerlo_pgsql:db_check_tables(DB, "peers") of
-        {ok, 0} -> torerlo_pgsql:db_create(DB, "peers");
+%        {ok, 0} -> torerlo_pgsql:db_create(DB, "peers");
+	{ok, 0} -> torerlo_pgsql:db_create(DB, "peers", {field, [peer_id, peer_ip, peer_port, peer_uploaded, peer_downloaded, peer_left, torrent_hash, peer_time]});
         {ok, 1} -> io:format("table is exist...~n", []);
 	_ -> io:format("tables are broken!~n", [])
     end,
     Pid_response = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:loop() end),
-    Pid_database = spawn(fun() -> process_flag(trap_exit,true), torerlo_pgsql:loop(DB, Pid_response) end),
-    spawn(fun() -> process_flag(trap_exit,true), torerlo_pgsql:clean(DB, "peers") end),
-    Pid_request = spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(Port, Pid_database) end),
+    Pid_database = spawn(fun() -> process_flag(trap_exit,true), torerlo_database:db_loop(DB, Pid_response) end),
+    spawn(fun() -> process_flag(trap_exit,true), torerlo_database:clean_loop(DB, "peers") end),
+    spawn(fun() -> process_flag(trap_exit,true), torerlo_listen:listen(Port, Pid_database) end),
     {ok, start}.
 
 handle_call({auth, UserName, UserPass}, _From, State) ->
